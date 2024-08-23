@@ -11,21 +11,27 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text ScoreText1;
     public GameObject GameOverText;
-    
+
     private bool m_Started = false;
     private int m_Points;
-    
     private bool m_GameOver = false;
 
-    
-    // Start is called before the first frame update
     void Start()
     {
+        if (BrickPrefab == null || Ball == null || ScoreText == null || ScoreText1 == null || GameOverText == null)
+        {
+            Debug.LogError("One or more references are not set in the Inspector.");
+            return;
+        }
+
+        LoadHighScore();
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
-        
-        int[] pointCountArray = new [] {1,1,2,2,5,5};
+
+        int[] pointCountArray = new[] { 1, 1, 2, 2, 5, 5 };
         for (int i = 0; i < LineCount; ++i)
         {
             for (int x = 0; x < perLine; ++x)
@@ -57,20 +63,56 @@ public class MainManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
-                SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+                SceneManager.LoadScene(SceneManager.GetActiveScene().name);
             }
         }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            ReturnToMainMenu();
+        }
+
+        // Existing input handling for starting the game and game over...
     }
 
     void AddPoint(int point)
     {
         m_Points += point;
         ScoreText.text = $"Score : {m_Points}";
+
+        if (m_Points > PlayerManager.Instance.bestScore)
+        {
+            PlayerManager.Instance.bestScore = m_Points;
+            PlayerManager.Instance.playerName = PlayerPrefs.GetString("CurrentPlayerName", "Player"); // Update high score holder's name
+            PlayerManager.Instance.SaveNameAndScore();
+            UpdateHighScoreDisplay();
+        }
     }
 
     public void GameOver()
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        UpdateHighScoreDisplay();
     }
+
+    void LoadHighScore()
+    {
+        PlayerManager.Instance.LoadNameAndScore();
+        UpdateHighScoreDisplay();
+    }
+
+    void UpdateHighScoreDisplay()
+    {
+        ScoreText1.text = $"Best Score : {PlayerManager.Instance.playerName} : {PlayerManager.Instance.bestScore}";
+    }
+
+  
+
+    void ReturnToMainMenu()
+    {
+        // Save any necessary state or data before switching scenes
+        SceneManager.LoadScene(0); // Replace "MainMenu" with the name of your main menu scene
+    }
+
 }
